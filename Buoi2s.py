@@ -2,16 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import mlflow
-import os
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-# 📌 Cấu hình MLflow Tracking URI (có thể thay đổi thành cloud nếu cần)
-MLFLOW_URI = "sqlite:///mlflow.db"  # Hoặc URL của MLflow Tracking Server
-mlflow.set_tracking_uri(MLFLOW_URI)
-
-# 📂 Tải dữ liệu từ URL
+# 📌 Đọc dữ liệu từ URL
 DATA_URL = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
 df = pd.read_csv(DATA_URL)
 
@@ -42,25 +36,6 @@ X = df.drop(columns=['Survived'])
 y = df['Survived']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42, stratify=y_train)
-
-# 📌 Ghi logs vào MLflow
-mlflow.set_experiment("Titanic_Data_Preprocessing")
-if mlflow.active_run():
-    mlflow.end_run()
-
-with mlflow.start_run():
-    mlflow.log_param("fillna_age", "median")
-    mlflow.log_param("dropna_embarked", True)
-    mlflow.log_param("fillna_cabin", "Unknown")
-    mlflow.log_param("sex_encoding", "male=1, female=0")
-    mlflow.log_param("embarked_encoding", "S=0, C=1, Q=2")
-    mlflow.log_param("drop_columns", "Name, Ticket, Cabin")
-    mlflow.log_param("outlier_detection", "IQR for Fare")
-    mlflow.log_param("scaling_method", "StandardScaler")
-    mlflow.log_metric("train_size", X_train.shape[0])
-    mlflow.log_metric("val_size", X_val.shape[0])
-    mlflow.log_metric("test_size", X_test.shape[0])
-    mlflow.end_run()
 
 # 📌 Hiển thị Dashboard trên Streamlit
 st.title("🚢 Titanic Data Preprocessing Dashboard")
