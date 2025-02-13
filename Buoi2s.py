@@ -7,17 +7,19 @@ import os
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-# 📌 Cấu hình MLflow Tracking URI (chạy local hoặc cloud)
-MLFLOW_URI = "file:///C:/TraThanhTri/PYthon/TriTraThanh/MLvsPython/mlruns"  # Thay bằng URI cloud nếu cần
-mlflow.set_tracking_uri(MLFLOW_URI)
+# 📌 Cấu hình MLflow Tracking URI (Sử dụng URI từ xa nếu có)
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "https://your-mlflow-server")
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-# 📂 Đọc dữ liệu gốc
-DATA_PATH = "C:/TraThanhTri/PYthon/TriTraThanh/MLvsPython/data.csv"
+# 📂 Đọc dữ liệu gốc từ URL hoặc tải lên
+DATA_URL = "https://raw.githubusercontent.com/your-repo/data.csv"  # Thay URL dữ liệu phù hợp
+DATA_PATH = "data.csv"
+
 if not os.path.exists(DATA_PATH):
-    st.error("🚨 Không tìm thấy file dữ liệu gốc! Hãy kiểm tra đường dẫn.")
-    st.stop()
-
-df = pd.read_csv(DATA_PATH, encoding="utf-8")
+    df = pd.read_csv(DATA_URL)
+    df.to_csv(DATA_PATH, index=False)  # Lưu để dùng sau
+else:
+    df = pd.read_csv(DATA_PATH)
 
 # 🔹 Xử lý dữ liệu bị thiếu (NaN)
 df['Age'] = df['Age'].fillna(df['Age'].median())
@@ -75,11 +77,7 @@ with mlflow.start_run():
 st.title("🚢 Titanic Data Preprocessing Dashboard")
 
 # 📂 Đọc dữ liệu đã xử lý
-if os.path.exists(PROCESSED_PATH):
-    df = pd.read_csv(PROCESSED_PATH)
-else:
-    st.error("🚨 Không tìm thấy file dữ liệu đã xử lý! Hãy chắc chắn rằng quá trình tiền xử lý đã được chạy.")
-    st.stop()
+df = pd.read_csv(PROCESSED_PATH)
 
 # 📌 Lấy run ID gần nhất từ MLflow
 experiment = mlflow.get_experiment_by_name("Titanic_Data_Preprocessing")
@@ -87,7 +85,7 @@ if experiment:
     experiment_id = experiment.experiment_id
     latest_run = mlflow.search_runs(experiment_ids=[experiment_id], order_by=["start_time desc"], max_results=1)
     if latest_run.empty:
-        st.warning("⚠️ Không tìm thấy thông tin từ MLflow! Một số dữ liệu có thể không hiển thị đầy đủ.")
+        st.warning("⚠️ Không tìm thấy thông tin từ MLflow!")
         run_data = None
     else:
         run_id = latest_run.iloc[0]["run_id"]
@@ -124,14 +122,14 @@ if train_size > 0 and val_size > 0 and test_size > 0:
     ax.set_title("📊 Tỉ lệ tập dữ liệu")
     st.pyplot(fig)
 else:
-    st.warning("⚠️ Không thể hiển thị biểu đồ do thiếu thông tin về kích thước dữ liệu.")
+    st.warning("⚠️ Không thể hiển thị biểu đồ.")
 
 # 🛠 Hiển thị thông số MLflow
 st.subheader("📜 Thông tin từ MLflow")
 if mlflow_params:
     st.json(mlflow_params)
 else:
-    st.warning("⚠️ Không có thông số nào được lưu trong MLflow.")
+    st.warning("⚠️ Không có thông số nào từ MLflow.")
 
 # ✅ Kết thúc ứng dụng
 st.success("🎉 Dữ liệu đã được hiển thị thành công!")
