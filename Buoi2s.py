@@ -9,7 +9,7 @@ import os
 mlflow.set_tracking_uri("file:///C:/TraThanhTri/PYthon/TriTraThanh/MLvsPython/mlruns")
 
 # 📂 **Đọc dữ liệu đã xử lý**
-processed_file = "C:/TraThanhTri/PYthon/processed_data.csv"
+processed_file = "processed_data.csv"
 if os.path.exists(processed_file):
     df = pd.read_csv(processed_file)
 else:
