@@ -6,7 +6,10 @@ import mlflow
 import os
 
 # 📌 **Cấu hình MLflow Tracking URI**
-mlflow.set_tracking_uri("file:///C:/TraThanhTri/PYthon/TriTraThanh/MLvsPython/mlruns")
+mlflow_dir = "./mlruns"  # Lưu dữ liệu MLflow trong thư mục hiện tại
+os.makedirs(mlflow_dir, exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
+
+mlflow.set_tracking_uri(f"file://{os.path.abspath(mlflow_dir)}")
 
 # 📂 **Đọc dữ liệu đã xử lý**
 processed_file = "processed_data.csv"
@@ -16,22 +19,32 @@ else:
     st.error("🚨 Không tìm thấy file dữ liệu đã xử lý! Hãy chắc chắn rằng quá trình tiền xử lý đã được chạy.")
     st.stop()
 
+# 📌 **Lấy hoặc tạo `experiment_id`**
+experiment = mlflow.get_experiment_by_name("Titanic_Data_Preprocessing")
+if experiment:
+    experiment_id = experiment.experiment_id
+else:
+    experiment_id = mlflow.create_experiment("Titanic_Data_Preprocessing")
+
 # 📌 **Lấy run ID gần nhất từ MLflow**
-experiment_id = mlflow.get_experiment_by_name("Titanic_Data_Preprocessing").experiment_id
 latest_run = mlflow.search_runs(experiment_ids=[experiment_id], order_by=["start_time desc"], max_results=1)
 
 if latest_run.empty:
-    st.error("🚨 Không tìm thấy thông tin từ MLflow! Hãy chạy quá trình tiền xử lý trước.")
-    st.stop()
+    st.warning("⚠️ Không tìm thấy thông tin từ MLflow! Một số dữ liệu có thể không hiển thị đầy đủ.")
+    run_data = None
+else:
+    run_id = latest_run.iloc[0]["run_id"]
+    run_data = mlflow.get_run(run_id).data
 
-run_id = latest_run.iloc[0]["run_id"]
-run_data = mlflow.get_run(run_id).data
-
-# 📌 **Lấy các thông số từ MLflow**
-train_size = run_data.metrics.get("train_size", "N/A")
-val_size = run_data.metrics.get("val_size", "N/A")
-test_size = run_data.metrics.get("test_size", "N/A")
-mlflow_params = run_data.params
+# 📌 **Lấy thông số từ MLflow**
+if run_data:
+    train_size = int(run_data.metrics.get("train_size", 0))
+    val_size = int(run_data.metrics.get("val_size", 0))
+    test_size = int(run_data.metrics.get("test_size", 0))
+    mlflow_params = run_data.params
+else:
+    train_size, val_size, test_size = 0, 0, 0
+    mlflow_params = {}
 
 # 🏷️ **Tiêu đề ứng dụng**
 st.title("🚢 Titanic Data Preprocessing Dashboard")
@@ -47,7 +60,7 @@ st.write(f"**🔸 Validation size:** {val_size}")
 st.write(f"**🔹 Test size:** {test_size}")
 
 # 📊 **Vẽ biểu đồ tỷ lệ tập dữ liệu**
-if all(isinstance(size, (int, float)) for size in [train_size, val_size, test_size]):
+if train_size > 0 and val_size > 0 and test_size > 0:
     sizes = [train_size, val_size, test_size]
     labels = ["Train", "Validation", "Test"]
     
@@ -60,7 +73,10 @@ else:
 
 # 🛠️ **Hiển thị thông số MLflow**
 st.subheader("📜 Thông tin từ MLflow")
-st.json(mlflow_params)
+if mlflow_params:
+    st.json(mlflow_params)
+else:
+    st.warning("⚠️ Không có thông số nào được lưu trong MLflow.")
 
 # ✅ **Kết thúc ứng dụng**
 st.success("🎉 Dữ liệu đã được hiển thị thành công!")
