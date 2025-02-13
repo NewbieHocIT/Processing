@@ -6,18 +6,18 @@ import mlflow
 import os
 
 # 📌 **Cấu hình MLflow Tracking URI**
-mlflow_dir = "./mlruns"  # Lưu dữ liệu MLflow trong thư mục hiện tại
+mlflow_dir = "mlruns"  # Lưu dữ liệu MLflow trong thư mục hiện tại
 os.makedirs(mlflow_dir, exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
 
 mlflow.set_tracking_uri(f"file://{os.path.abspath(mlflow_dir)}")
 
 # 📂 **Đọc dữ liệu đã xử lý**
 processed_file = "processed_data.csv"
-if os.path.exists(processed_file):
-    df = pd.read_csv(processed_file)
-else:
+if not os.path.exists(processed_file):
     st.error("🚨 Không tìm thấy file dữ liệu đã xử lý! Hãy chắc chắn rằng quá trình tiền xử lý đã được chạy.")
     st.stop()
+
+df = pd.read_csv(processed_file)
 
 # 📌 **Lấy hoặc tạo `experiment_id`**
 experiment = mlflow.get_experiment_by_name("Titanic_Data_Preprocessing")
@@ -38,12 +38,12 @@ else:
 
 # 📌 **Lấy thông số từ MLflow**
 if run_data:
-    train_size = int(run_data.metrics.get("train_size", 0))
-    val_size = int(run_data.metrics.get("val_size", 0))
-    test_size = int(run_data.metrics.get("test_size", 0))
+    train_size = run_data.metrics.get("train_size", None)
+    val_size = run_data.metrics.get("val_size", None)
+    test_size = run_data.metrics.get("test_size", None)
     mlflow_params = run_data.params
 else:
-    train_size, val_size, test_size = 0, 0, 0
+    train_size, val_size, test_size = None, None, None
     mlflow_params = {}
 
 # 🏷️ **Tiêu đề ứng dụng**
@@ -55,12 +55,15 @@ st.dataframe(df.head())
 
 # 📌 **Hiển thị thông tin tập dữ liệu**
 st.subheader("📊 Thông tin kích thước tập dữ liệu")
-st.write(f"**🔹 Training size:** {train_size}")
-st.write(f"**🔸 Validation size:** {val_size}")
-st.write(f"**🔹 Test size:** {test_size}")
 
-# 📊 **Vẽ biểu đồ tỷ lệ tập dữ liệu**
-if train_size > 0 and val_size > 0 and test_size > 0:
+if train_size is None or val_size is None or test_size is None:
+    st.warning("⚠️ Không thể hiển thị kích thước tập dữ liệu do thiếu thông tin từ MLflow.")
+else:
+    st.write(f"**🔹 Training size:** {int(train_size)}")
+    st.write(f"**🔸 Validation size:** {int(val_size)}")
+    st.write(f"**🔹 Test size:** {int(test_size)}")
+
+    # 📊 **Vẽ biểu đồ tỷ lệ tập dữ liệu**
     sizes = [train_size, val_size, test_size]
     labels = ["Train", "Validation", "Test"]
     
@@ -68,8 +71,6 @@ if train_size > 0 and val_size > 0 and test_size > 0:
     ax.pie(sizes, labels=labels, autopct="%1.1f%%", colors=['#3498db', '#f39c12', '#2ecc71'], startangle=90)
     ax.set_title("📊 Tỉ lệ tập dữ liệu")
     st.pyplot(fig)
-else:
-    st.warning("⚠️ Không thể hiển thị biểu đồ do thiếu thông tin về kích thước dữ liệu.")
 
 # 🛠️ **Hiển thị thông số MLflow**
 st.subheader("📜 Thông tin từ MLflow")
