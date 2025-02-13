@@ -7,19 +7,13 @@ import os
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-# 📌 Cấu hình MLflow Tracking URI (Sử dụng URI từ xa nếu có)
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "https://your-mlflow-server")
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+# 📌 Cấu hình MLflow Tracking URI (có thể thay đổi thành cloud nếu cần)
+MLFLOW_URI = "sqlite:///mlflow.db"  # Hoặc URL của MLflow Tracking Server
+mlflow.set_tracking_uri(MLFLOW_URI)
 
-# 📂 Đọc dữ liệu gốc từ URL hoặc tải lên
-DATA_URL = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"  # Thay URL dữ liệu phù hợp
-DATA_PATH = "data.csv"
-
-if not os.path.exists(DATA_PATH):
-    df = pd.read_csv(DATA_URL)
-    df.to_csv(DATA_PATH, index=False)  # Lưu để dùng sau
-else:
-    df = pd.read_csv(DATA_PATH)
+# 📂 Tải dữ liệu từ URL
+DATA_URL = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
+df = pd.read_csv(DATA_URL)
 
 # 🔹 Xử lý dữ liệu bị thiếu (NaN)
 df['Age'] = df['Age'].fillna(df['Age'].median())
@@ -42,10 +36,6 @@ df = df[(df['Fare'] >= lower_bound) & (df['Fare'] <= upper_bound)]
 # 🔹 Chuẩn hóa dữ liệu
 scaler = StandardScaler()
 df[['Age', 'Fare']] = scaler.fit_transform(df[['Age', 'Fare']])
-
-# 📌 Lưu dữ liệu đã xử lý
-PROCESSED_PATH = "processed_data.csv"
-df.to_csv(PROCESSED_PATH, index=False)
 
 # 🔹 Chia tập dữ liệu
 X = df.drop(columns=['Survived'])
@@ -70,38 +60,10 @@ with mlflow.start_run():
     mlflow.log_metric("train_size", X_train.shape[0])
     mlflow.log_metric("val_size", X_val.shape[0])
     mlflow.log_metric("test_size", X_test.shape[0])
-    mlflow.log_artifact(PROCESSED_PATH)
     mlflow.end_run()
 
 # 📌 Hiển thị Dashboard trên Streamlit
 st.title("🚢 Titanic Data Preprocessing Dashboard")
-
-# 📂 Đọc dữ liệu đã xử lý
-df = pd.read_csv(PROCESSED_PATH)
-
-# 📌 Lấy run ID gần nhất từ MLflow
-experiment = mlflow.get_experiment_by_name("Titanic_Data_Preprocessing")
-if experiment:
-    experiment_id = experiment.experiment_id
-    latest_run = mlflow.search_runs(experiment_ids=[experiment_id], order_by=["start_time desc"], max_results=1)
-    if latest_run.empty:
-        st.warning("⚠️ Không tìm thấy thông tin từ MLflow!")
-        run_data = None
-    else:
-        run_id = latest_run.iloc[0]["run_id"]
-        run_data = mlflow.get_run(run_id).data
-else:
-    run_data = None
-
-# 📌 Lấy thông số từ MLflow
-if run_data:
-    train_size = int(run_data.metrics.get("train_size", 0))
-    val_size = int(run_data.metrics.get("val_size", 0))
-    test_size = int(run_data.metrics.get("test_size", 0))
-    mlflow_params = run_data.params
-else:
-    train_size, val_size, test_size = 0, 0, 0
-    mlflow_params = {}
 
 # 📊 Hiển thị DataFrame sau xử lý
 st.subheader("🔹 Dữ liệu sau khi tiền xử lý")
@@ -109,27 +71,17 @@ st.dataframe(df.head())
 
 # 📌 Hiển thị thông tin tập dữ liệu
 st.subheader("📊 Thông tin kích thước tập dữ liệu")
-st.write(f"**🔹 Training size:** {train_size}")
-st.write(f"**🔸 Validation size:** {val_size}")
-st.write(f"**🔹 Test size:** {test_size}")
+st.write(f"**🔹 Training size:** {X_train.shape[0]}")
+st.write(f"**🔸 Validation size:** {X_val.shape[0]}")
+st.write(f"**🔹 Test size:** {X_test.shape[0]}")
 
 # 📊 Vẽ biểu đồ tỷ lệ tập dữ liệu
-if train_size > 0 and val_size > 0 and test_size > 0:
-    sizes = [train_size, val_size, test_size]
-    labels = ["Train", "Validation", "Test"]
-    fig, ax = plt.subplots()
-    ax.pie(sizes, labels=labels, autopct="%1.1f%%", colors=['#3498db', '#f39c12', '#2ecc71'], startangle=90)
-    ax.set_title("📊 Tỉ lệ tập dữ liệu")
-    st.pyplot(fig)
-else:
-    st.warning("⚠️ Không thể hiển thị biểu đồ.")
-
-# 🛠 Hiển thị thông số MLflow
-st.subheader("📜 Thông tin từ MLflow")
-if mlflow_params:
-    st.json(mlflow_params)
-else:
-    st.warning("⚠️ Không có thông số nào từ MLflow.")
+sizes = [X_train.shape[0], X_val.shape[0], X_test.shape[0]]
+labels = ["Train", "Validation", "Test"]
+fig, ax = plt.subplots()
+ax.pie(sizes, labels=labels, autopct="%1.1f%%", colors=['#3498db', '#f39c12', '#2ecc71'], startangle=90)
+ax.set_title("📊 Tỉ lệ tập dữ liệu")
+st.pyplot(fig)
 
 # ✅ Kết thúc ứng dụng
-st.success("🎉 Dữ liệu đã được hiển thị thành công!")
+st.success("🎉 Dữ liệu đã được xử lý và hiển thị thành công!")
