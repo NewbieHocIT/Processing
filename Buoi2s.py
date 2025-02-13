@@ -12,7 +12,7 @@ MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "https://your-mlflow-serv
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 # 📂 Đọc dữ liệu gốc từ URL hoặc tải lên
-DATA_URL = "https://raw.githubusercontent.com/your-repo/data.csv"  # Thay URL dữ liệu phù hợp
+DATA_URL = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"  # Thay URL dữ liệu phù hợp
 DATA_PATH = "data.csv"
 
 if not os.path.exists(DATA_PATH):
