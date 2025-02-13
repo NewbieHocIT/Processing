@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 # 📌 Đọc dữ liệu từ URL
-DATA_URL = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
+DATA_URL = "data.csv"
 df = pd.read_csv(DATA_URL)
 
 # 🔹 Xử lý dữ liệu bị thiếu (NaN)
