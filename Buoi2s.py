@@ -34,15 +34,16 @@ df[['Age', 'Fare']] = scaler.fit_transform(df[['Age', 'Fare']])
 # 🔹 Chia tập dữ liệu
 X = df.drop(columns=['Survived'])
 y = df['Survived']
-# 📌 Chia tập dữ liệu thành 70% Test và 30% Train + Validation
-X_test, X_train_val, y_test, y_train_val = train_test_split(
+# 📌 Chia tập dữ liệu thành 70% Train và 30% Test + Validation
+X_train, X_test_val, y_train, y_test_val = train_test_split(
     X, y, test_size=0.30, random_state=42, stratify=y
 )
 
-# 📌 Chia tiếp tập Train + Validation thành 15% Train và 15% Validation
-X_train, X_val, y_train, y_val = train_test_split(
-    X_train_val, y_train_val, test_size=0.5, random_state=42, stratify=y_train_val
+# 📌 Chia tiếp tập Test + Validation thành 15% Test và 15% Validation
+X_test, X_val, y_test, y_val = train_test_split(
+    X_test_val, y_test_val, test_size=0.5, random_state=42, stratify=y_test_val
 )
+
 
 
 # 📌 Hiển thị Dashboard trên Streamlit
