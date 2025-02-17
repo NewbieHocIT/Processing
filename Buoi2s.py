@@ -34,11 +34,58 @@ df[['Age', 'Fare']] = scaler.fit_transform(df[['Age', 'Fare']])
 # 🔹 Chia tập dữ liệu
 X = df.drop(columns=['Survived'])
 y = df['Survived']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42, stratify=y_train)
+# 📌 Chia tập dữ liệu thành 70% Test và 30% Train + Validation
+X_test, X_train_val, y_test, y_train_val = train_test_split(
+    X, y, test_size=0.30, random_state=42, stratify=y
+)
+
+# 📌 Chia tiếp tập Train + Validation thành 15% Train và 15% Validation
+X_train, X_val, y_train, y_val = train_test_split(
+    X_train_val, y_train_val, test_size=0.5, random_state=42, stratify=y_train_val
+)
+
 
 # 📌 Hiển thị Dashboard trên Streamlit
 st.title("🚢 Titanic Data Preprocessing Dashboard")
+# 📌 Hiển thị chi tiết các bước xử lý dữ liệu
+st.subheader("📌 Các bước xử lý dữ liệu")
+
+with st.expander("🔹 1. Xử lý dữ liệu bị thiếu (NaN)"):
+    st.markdown("""
+    - **Cột `Age`**: Điền giá trị thiếu bằng **median (trung vị)**.
+    - **Cột `Embarked`**: Loại bỏ các dòng bị thiếu dữ liệu.
+    - **Cột `Cabin`**: Điền giá trị thiếu bằng `"Unknown"`.
+    """)
+
+with st.expander("🔹 2. Chuyển đổi dữ liệu dạng chuỗi thành số"):
+    st.markdown("""
+    - **Cột `Sex`**: Chuyển thành số (`male=1, female=0`).
+    - **Cột `Embarked`**: Chuyển thành số (`S=0, C=1, Q=2`).
+    """)
+
+with st.expander("🔹 3. Loại bỏ cột không cần thiết"):
+    st.markdown("""
+    - Loại bỏ các cột: **`Name`**, **`Ticket`**, **`Cabin`** (không ảnh hưởng đến dự đoán).
+    """)
+
+with st.expander("🔹 4. Xử lý ngoại lệ trong giá vé (`Fare`)"):
+    st.markdown("""
+    - Áp dụng phương pháp **IQR (Interquartile Range)** để loại bỏ các giá trị ngoại lệ.
+    """)
+
+with st.expander("🔹 5. Chuẩn hóa dữ liệu"):
+    st.markdown("""
+    - Áp dụng **StandardScaler** để chuẩn hóa **`Age`** và **`Fare`** về phân phối chuẩn.
+    """)
+
+with st.expander("🔹 6. Chia tập dữ liệu"):
+    st.markdown("""
+    - **70% dữ liệu** dùng để huấn luyện (`Train`).
+    - **15% dữ liệu** dùng để kiểm định (`Validation`).
+    - **15% dữ liệu** dùng để kiểm tra (`Test`).
+    """)
+
+st.success("📌 Các bước xử lý dữ liệu đã được hiển thị chi tiết!") 
 
 # 📊 Hiển thị DataFrame sau xử lý
 st.subheader("🔹 Dữ liệu sau khi tiền xử lý")
